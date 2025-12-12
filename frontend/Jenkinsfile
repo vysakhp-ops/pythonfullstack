@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'DEPLOY_IP', defaultValue: '10.10.12.242', description: 'Deployment Server IP')
+        string(name: 'DEPLOY_IP', defaultValue: '192.168.1.5', description: 'Deployment Server IP')
         string(name: 'DEPLOY_PATH', defaultValue: '/opt/fullstack', description: 'Deploy Path in Server')
         string(name: 'SSH_CRED', defaultValue: 'innovature', description: 'SSH Credential ID')
     }
