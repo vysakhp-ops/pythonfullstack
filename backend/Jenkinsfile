@@ -1,16 +1,17 @@
 pipeline {
     agent any
 
-    environment {
-        DEPLOY_IP = "10.10.12.242"
-        DEPLOY_PATH = "/opt/deploy/project"
+    parameters {
+        string(name: 'DEPLOY_IP', defaultValue: '10.10.12.242', description: 'Target server IP')
+        string(name: 'DEPLOY_PATH', defaultValue: '/opt/deploy/project', description: 'Deployment path on server')
+        choice(name: 'SSH_CRED', choices: ['innovature', 'deploy-ssh', 'dev-server-ssh'], description: 'Select SSH Credential ID')
     }
 
     stages {
 
         stage("Build Backend Image") {
             steps {
-                dir('backend') {        // <-- IMPORTANT
+                dir('backend') {
                     sh """
                     docker build -t backend-image:latest .
                     docker save -o backend.tar backend-image:latest
@@ -21,9 +22,10 @@ pipeline {
 
         stage("Copy Backend Image to Dev Server") {
             steps {
-                sshagent(['dev-server-ssh']) {
+                sshagent([params.SSH_CRED]) {
                     sh """
-                    scp -o StrictHostKeyChecking=no backend/backend.tar innovature@${DEPLOY_IP}:${DEPLOY_PATH}/
+                    scp -o StrictHostKeyChecking=no backend/backend.tar \
+                        innovature@${params.DEPLOY_IP}:${params.DEPLOY_PATH}/
                     """
                 }
             }
@@ -31,11 +33,11 @@ pipeline {
 
         stage("Deploy Backend") {
             steps {
-                sshagent(['dev-server-ssh']) {
+                sshagent([params.SSH_CRED]) {
                     sh """
-                    ssh -o StrictHostKeyChecking=no innovature@${DEPLOY_IP} '
-                        docker load -i ${DEPLOY_PATH}/backend.tar &&
-                        cd ${DEPLOY_PATH} &&
+                    ssh -o StrictHostKeyChecking=no innovature@${params.DEPLOY_IP} '
+                        docker load -i ${params.DEPLOY_PATH}/backend.tar &&
+                        cd ${params.DEPLOY_PATH} &&
                         docker compose up -d backend
                     '
                     """
@@ -44,4 +46,5 @@ pipeline {
         }
     }
 }
+
 
