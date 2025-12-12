@@ -38,7 +38,7 @@ pipeline {
                     ssh -o StrictHostKeyChecking=no innovature@${params.DEPLOY_IP} '
                         docker load -i ${params.DEPLOY_PATH}/backend.tar &&
                         cd ${params.DEPLOY_PATH} &&
-                        docker compose up -d backend
+                        docker compose up -d --no-recreate backend
                     '
                     """
                 }
