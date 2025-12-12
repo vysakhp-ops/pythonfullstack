@@ -4,7 +4,7 @@ pipeline {
     parameters {
         string(name: 'DEPLOY_IP', defaultValue: '10.10.12.242', description: 'Deployment Server IP')
         string(name: 'DEPLOY_PATH', defaultValue: '/opt/deploy/project', description: 'Deploy Path in Server')
-        string(name: 'SSH_CRED', defaultValue: 'dev-server-ssh', description: 'SSH Credential ID')
+        string(name: 'SSH_CRED', defaultValue: 'innovature', description: 'SSH Credential ID')
     }
 
     stages {
