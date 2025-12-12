@@ -1,27 +1,30 @@
 pipeline {
     agent any
 
-    environment {
-        DEPLOY_IP = "10.10.12.242"
-        DEPLOY_PATH = "/opt/deploy/project"
+    parameters {
+        string(name: 'DEPLOY_IP', defaultValue: '10.10.12.242', description: 'Deployment Server IP')
+        string(name: 'DEPLOY_PATH', defaultValue: '/opt/deploy/project', description: 'Deploy Path in Server')
+        string(name: 'SSH_CRED', defaultValue: 'dev-server-ssh', description: 'SSH Credential ID')
     }
 
     stages {
 
         stage("Build Frontend Image") {
             steps {
-                sh """
-                docker build -t frontend-image:latest .
-                docker save -o frontend.tar frontend-image:latest
-                """
+                dir('frontend') {       // IMPORTANT: run inside frontend folder
+                    sh """
+                    docker build -t frontend-image:latest .
+                    docker save -o frontend.tar frontend-image:latest
+                    """
+                }
             }
         }
 
         stage("Copy Frontend Image to Dev Server") {
             steps {
-                sshagent(['dev-server-ssh']) {
+                sshagent([params.SSH_CRED]) {
                     sh """
-                    scp -o StrictHostKeyChecking=no frontend.tar innovature@${DEPLOY_IP}:${DEPLOY_PATH}/
+                    scp -o StrictHostKeyChecking=no frontend/frontend.tar innovature@${params.DEPLOY_IP}:${params.DEPLOY_PATH}/
                     """
                 }
             }
@@ -29,12 +32,12 @@ pipeline {
 
         stage("Deploy Frontend") {
             steps {
-                sshagent(['dev-server-ssh']) {
+                sshagent([params.SSH_CRED]) {
                     sh """
-                    ssh -o StrictHostKeyChecking=no innovature@${DEPLOY_IP} '
-                        docker load -i ${DEPLOY_PATH}/frontend.tar &&
-                        cd ${DEPLOY_PATH} &&
-                        docker compose up -d frontend
+                    ssh -o StrictHostKeyChecking=no innovature@${params.DEPLOY_IP} '
+                        docker load -i ${params.DEPLOY_PATH}/frontend.tar &&
+                        cd ${params.DEPLOY_PATH} &&
+                        docker compose up -d --no-recreate frontend
                     '
                     """
                 }
@@ -42,3 +45,4 @@ pipeline {
         }
     }
 }
+
