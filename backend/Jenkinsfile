@@ -10,10 +10,12 @@ pipeline {
 
         stage("Build Backend Image") {
             steps {
-                sh """
-                docker build -t backend-image:latest .
-                docker save -o backend.tar backend-image:latest
-                """
+                dir('backend') {        // <-- IMPORTANT
+                    sh """
+                    docker build -t backend-image:latest .
+                    docker save -o backend.tar backend-image:latest
+                    """
+                }
             }
         }
 
@@ -21,7 +23,7 @@ pipeline {
             steps {
                 sshagent(['dev-server-ssh']) {
                     sh """
-                    scp -o StrictHostKeyChecking=no backend.tar innovature@${DEPLOY_IP}:${DEPLOY_PATH}/
+                    scp -o StrictHostKeyChecking=no backend/backend.tar innovature@${DEPLOY_IP}:${DEPLOY_PATH}/
                     """
                 }
             }
@@ -42,3 +44,4 @@ pipeline {
         }
     }
 }
+
