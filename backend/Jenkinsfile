@@ -1,0 +1,44 @@
+pipeline {
+    agent any
+
+    environment {
+        DEPLOY_IP = "10.10.12.242"
+        DEPLOY_PATH = "/opt/deploy/project"
+    }
+
+    stages {
+
+        stage("Build Backend Image") {
+            steps {
+                sh """
+                docker build -t backend-image:latest .
+                docker save -o backend.tar backend-image:latest
+                """
+            }
+        }
+
+        stage("Copy Backend Image to Dev Server") {
+            steps {
+                sshagent(['dev-server-ssh']) {
+                    sh """
+                    scp -o StrictHostKeyChecking=no backend.tar innovature@${DEPLOY_IP}:${DEPLOY_PATH}/
+                    """
+                }
+            }
+        }
+
+        stage("Deploy Backend") {
+            steps {
+                sshagent(['dev-server-ssh']) {
+                    sh """
+                    ssh -o StrictHostKeyChecking=no innovature@${DEPLOY_IP} '
+                        docker load -i ${DEPLOY_PATH}/backend.tar &&
+                        cd ${DEPLOY_PATH} &&
+                        docker compose up -d backend
+                    '
+                    """
+                }
+            }
+        }
+    }
+}
